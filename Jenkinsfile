@@ -6,15 +6,18 @@ pipeline {
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Check Docker') {
             steps {
-                echo 'Cloning code...'
+                echo 'Checking Docker access...'
+                sh 'docker --version'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
+                sh 'ls -la'
+                sh 'cat Dockerfile'
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
