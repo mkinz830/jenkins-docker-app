@@ -1,18 +1,21 @@
 pipeline {
     agent any
-
     environment {
         IMAGE_NAME = 'mkinz830/flask-app-docker'
     }
-
     stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out Git repository...'
+                checkout scm
+            }
+        }
         stage('Check Docker') {
             steps {
                 echo 'Checking Docker access...'
                 sh 'docker --version'
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
@@ -21,7 +24,6 @@ pipeline {
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
-
         stage('Push to Docker Hub') {
             steps {
                 echo 'Pushing image to Docker Hub...'
@@ -31,7 +33,6 @@ pipeline {
                 }
             }
         }
-
         stage('Cleanup') {
             steps {
                 echo 'Cleaning up...'
