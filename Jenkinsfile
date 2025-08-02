@@ -1,43 +1,39 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME = 'mkinz830/flask-app-docker'
+        DOCKER_IMAGE_NAME = 'mkinz830/flask-app-docker'
+        DOCKER_IMAGE_TAG  = '2'
     }
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                echo 'Checking out Git repository...'
-                checkout scm
-            }
-        }
-        stage('Check Docker') {
-            steps {
-                echo 'Checking Docker access...'
-                sh 'docker --version'
+                git url: 'https://github.com/mkinz830/jenkins-docker-app.git', branch: 'master'
             }
         }
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
-                sh 'ls -la'
-                sh 'cat Dockerfile'
-                sh 'docker build -t $IMAGE_NAME .'
-            }
-        }
-        stage('Push to Docker Hub') {
-            steps {
-                echo 'Pushing image to Docker Hub...'
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push $IMAGE_NAME'
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ."
                 }
             }
         }
-        stage('Cleanup') {
+        stage('Login to Docker Hub') {
             steps {
-                echo 'Cleaning up...'
-                sh 'docker rmi $IMAGE_NAME'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
+        }
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up Docker images'
+            sh "docker rmi ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} || true"
         }
     }
 }
